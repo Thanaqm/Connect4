@@ -1,0 +1,655 @@
+.app {
+  height: 100vh;
+  height: 100dvh;
+  padding: 12px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.status-box {
+  grid-area: status;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 0 8px;
+  text-align: center;
+}
+
+.meta {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Turn / result capsule, tinted with the current player's colour */
+.status-pill {
+  --pill: var(--muted);
+  --pill-text: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  padding: 7px 16px 7px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pill) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pill) 32%, transparent);
+  color: var(--pill-text);
+  font-size: 1rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 0.35s, box-shadow 0.35s, color 0.35s;
+}
+
+.status-pill.red {
+  --pill: var(--red);
+  --pill-text: var(--red-ui);
+}
+
+.status-pill.yellow {
+  --pill: var(--yellow);
+  --pill-text: var(--accent);
+}
+
+.pill-dot {
+  position: relative;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--pill);
+  transition: background-color 0.35s;
+}
+
+/* Soft expanding ring around the dot */
+.pill-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--pill);
+  animation: pill-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.status-pill.neutral .pill-dot::after {
+  display: none;
+}
+
+.thinking-dots {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: -4px;
+}
+
+.thinking-dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: thinking 1s ease-in-out infinite;
+}
+
+.thinking-dots i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.thinking-dots i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes pill-ping {
+  75%,
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@keyframes thinking {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+.dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+/* Board with a player panel on each side */
+.play-area {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(90px, 200px) minmax(0, 1fr) minmax(90px, 200px);
+  grid-template-areas: 'red board yellow';
+  gap: 16px;
+}
+
+.side {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  opacity: 0.45;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.side.red {
+  grid-area: red;
+}
+
+.side.yellow {
+  grid-area: yellow;
+}
+
+.side.turn,
+.side.winner {
+  opacity: 1;
+  transform: scale(1.06);
+}
+
+.side .piece.side-disc {
+  position: relative;
+  inset: auto;
+  margin: 0;
+  width: clamp(48px, 7vw, 96px);
+  height: clamp(48px, 7vw, 96px);
+  box-shadow: 0 10px 20px var(--shadow);
+  transition: box-shadow 0.3s;
+}
+
+.side.red {
+  --player: var(--red);
+}
+
+.side.yellow {
+  --player: var(--yellow);
+}
+
+.side.turn .side-disc {
+  box-shadow: 0 10px 20px var(--shadow), 0 0 0 4px var(--bg), 0 0 0 7px var(--player), 0 0 28px var(--player);
+  animation: hover-bob 1.6s ease-in-out infinite;
+}
+
+.side.winner .side-disc {
+  animation: pulse 0.9s ease-in-out infinite alternate;
+  box-shadow: 0 0 0 4px var(--bg), 0 0 0 7px var(--player), 0 0 34px var(--player);
+}
+
+.side-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.side.turn .side-name,
+.side.winner .side-name {
+  color: var(--text);
+}
+
+.side-score {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Game over: the board sinks back behind a sheet of frosted glass */
+.play-area > .side,
+.play-area > .board-area {
+  transition:
+    transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.9s ease,
+    filter 0.9s ease;
+}
+
+.play-area.over > .side,
+.play-area.over > .board-area {
+  transform: scale(0.95);
+  opacity: 0.75;
+  filter: saturate(0.85);
+}
+
+.game-over {
+  --over-color: var(--text);
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12), transparent 45%),
+    color-mix(in srgb, var(--bg) 42%, transparent);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(22px) saturate(160%);
+  animation: glass-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.game-over.red {
+  --over-color: var(--red-ui);
+}
+
+.game-over.yellow {
+  --over-color: var(--accent);
+}
+
+.game-over-content {
+  width: min(360px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.game-over h2 {
+  margin: 0;
+  font-size: clamp(2.6rem, 7vw, 4.6rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--over-color);
+}
+
+.over-sub {
+  margin: 10px 0 26px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* Title, score line and choices rise in one after another */
+.game-over-content > * {
+  animation: over-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.game-over-content > :nth-child(1) {
+  animation-delay: 0.25s;
+}
+
+.game-over-content > :nth-child(2) {
+  animation-delay: 0.38s;
+}
+
+.game-over-content > :nth-child(3) {
+  animation-delay: 0.5s;
+}
+
+@keyframes glass-in {
+  from {
+    opacity: 0;
+    -webkit-backdrop-filter: blur(0) saturate(100%);
+    backdrop-filter: blur(0) saturate(100%);
+  }
+}
+
+@keyframes over-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+.board-area {
+  grid-area: board;
+  flex: 1;
+  min-height: 0;
+  container-type: size;
+  display: grid;
+  place-items: center;
+}
+
+.board {
+  --pad: clamp(6px, 1.5cqmin, 18px);
+  /* Rows fill the height (leaving headroom for the hover disc); columns stretch to fill the width (up to 1.25x the row height). */
+  --ch: max(32px, min((100cqh - 2 * var(--pad)) / (var(--rows) + 0.95), (100cqw - 2 * var(--pad)) / var(--cols)));
+  --cw: max(32px, min((100cqw - 2 * var(--pad)) / var(--cols), var(--ch) * 1.25));
+  --disc: calc(min(var(--cw), var(--ch)) * 0.82);
+  --player: var(--red);
+  position: relative;
+  margin-top: calc(var(--ch) * 0.95);
+  display: grid;
+  grid-template-columns: repeat(var(--cols), var(--cw));
+  background: linear-gradient(180deg, var(--board), var(--board-dark));
+  padding: var(--pad);
+  border-radius: calc(var(--pad) * 1.8);
+  box-shadow: 0 20px 40px var(--shadow), inset 0 -4px 0 rgba(0, 0, 0, 0.2);
+}
+
+.board.turn-yellow {
+  --player: var(--yellow);
+}
+
+.column {
+  position: relative;
+  display: grid;
+  grid-template-rows: repeat(var(--rows), var(--ch));
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: calc(var(--pad) * 1.2);
+}
+
+/* Floating disc above the board that follows the cursor */
+.piece.hover-disc {
+  inset: auto;
+  margin: 0;
+  top: calc(var(--ch) * -0.92);
+  left: calc(var(--pad) + var(--hover-col) * var(--cw) + (var(--cw) - var(--disc)) / 2);
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.35), 0 0 22px color-mix(in srgb, var(--player) 45%, transparent);
+  transition: left 0.18s cubic-bezier(0.3, 0.7, 0.3, 1), opacity 0.2s;
+}
+
+.piece.hover-disc.visible {
+  opacity: 1;
+  animation: hover-bob 1.6s ease-in-out infinite;
+}
+
+.piece.hover-disc.visible.blocked {
+  opacity: 0.35;
+  animation: none;
+}
+
+/* Landing spot: a glass disc wrapped in a slowly flowing ring of light */
+.landing {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: var(--disc);
+  height: var(--disc);
+  border-radius: 50%;
+  z-index: 1;
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 18%, rgba(255, 255, 255, 0.55), transparent 70%),
+    radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--player) 50%, transparent), color-mix(in srgb, var(--player) 18%, transparent) 75%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.45),
+    inset 0 -8px 16px color-mix(in srgb, var(--player) 40%, transparent),
+    0 0 28px color-mix(in srgb, var(--player) 45%, transparent);
+  animation:
+    landing-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    landing-breathe 2.8s ease-in-out 0.5s infinite;
+}
+
+.landing::before,
+.landing::after {
+  content: '';
+  position: absolute;
+  inset: -9%;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--player),
+    color-mix(in oklch, var(--player), #ff2d95 45%),
+    color-mix(in oklch, var(--player), white 65%),
+    color-mix(in oklch, var(--player), #ff9f0a 45%),
+    var(--player)
+  );
+  /* Cut the conic fill down to a thin ring */
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+  animation: spin 4s linear infinite;
+}
+
+/* Same ring, blurred into a soft halo */
+.landing::after {
+  inset: -12%;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 10px), #000 calc(100% - 6px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 10px), #000 calc(100% - 6px));
+  filter: blur(8px);
+  opacity: 0.85;
+}
+
+@keyframes landing-in {
+  from {
+    transform: scale(0.55);
+    opacity: 0;
+  }
+}
+
+@keyframes landing-breathe {
+  50% {
+    transform: scale(0.96);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+      inset 0 -8px 16px color-mix(in srgb, var(--player) 50%, transparent),
+      0 0 40px color-mix(in srgb, var(--player) 60%, transparent);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes hover-bob {
+  50% {
+    transform: translateY(-6%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-over,
+  .game-over-content > *,
+  .pill-dot::after,
+  .thinking-dots i,
+  .piece.hover-disc.visible,
+  .landing,
+  .landing::before,
+  .landing::after {
+    animation: none;
+  }
+}
+
+.column:disabled {
+  cursor: default;
+}
+
+.column:focus-visible {
+  outline: 3px solid white;
+  outline-offset: -3px;
+}
+
+.cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.cell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: var(--disc);
+  height: var(--disc);
+  border-radius: 50%;
+  background: var(--bg);
+  box-shadow: inset 0 4px 6px rgba(0, 0, 0, 0.5);
+}
+
+.piece {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: var(--disc);
+  height: var(--disc);
+  border-radius: 50%;
+  z-index: 1;
+  transition: opacity 0.3s;
+}
+
+.piece.red {
+  background: radial-gradient(circle at 35% 35%, var(--red-light), var(--red) 55%, var(--red-dark));
+}
+
+.piece.yellow {
+  background: radial-gradient(circle at 35% 35%, var(--yellow-light), var(--yellow) 55%, var(--yellow-dark));
+}
+
+.piece.drop {
+  animation: drop calc(0.12s + var(--drop-rows) * 0.05s) cubic-bezier(0.5, 0, 0.75, 0) both,
+    bounce 0.25s ease-out calc(0.12s + var(--drop-rows) * 0.05s);
+}
+
+.piece.win {
+  animation: pulse 0.9s ease-in-out infinite alternate;
+  box-shadow: 0 0 0 4px white, 0 0 18px 4px rgba(255, 255, 255, 0.6);
+}
+
+.piece.dim {
+  opacity: 0.45;
+}
+
+@keyframes drop {
+  from {
+    transform: translateY(calc(var(--drop-rows) * -1 * var(--ch) - 30%));
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounce {
+  40% {
+    transform: translateY(-10%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  to {
+    transform: scale(0.88);
+  }
+}
+
+/* Actions */
+.actions {
+  grid-area: actions;
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* In-game controls are plain text, no button boxes */
+.actions button,
+.back {
+  border: 0;
+  padding: 8px 10px;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+.actions button:hover:not(:disabled),
+.back:hover {
+  color: var(--accent);
+}
+
+.actions button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.actions button.primary {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.actions .theme-toggle {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: none;
+}
+
+.actions .theme-toggle:hover {
+  background: none;
+}
+
+/* Top bar */
+.topbar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  grid-template-areas: 'back status actions';
+  align-items: center;
+  gap: 10px;
+}
+
+.back {
+  grid-area: back;
+  justify-self: start;
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      'back actions'
+      'status status';
+  }
+
+  /* Not enough room beside the board: players sit side by side above it */
+  .play-area {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      'red yellow'
+      'board board';
+    gap: 8px;
+  }
+
+  .side {
+    flex-direction: row;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .side .piece.side-disc {
+    width: 28px;
+    height: 28px;
+  }
+
+  .side.turn .side-disc {
+    box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--player), 0 0 14px var(--player);
+  }
+
+  .side-score {
+    font-size: 1.6rem;
+  }
+
+  .status-pill {
+    font-size: 0.9rem;
+    padding: 6px 14px 6px 10px;
+  }
+}
