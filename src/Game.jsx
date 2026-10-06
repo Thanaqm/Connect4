@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { COLS, ROWS, bestMove, createBoard, dropPiece, findWin, getDropRow, isFull } from './connect4';
+import { useEffect, useRef, useState } from 'react';
+import { COLS, ROWS, createBoard, dropPiece, findWin, getDropRow, isFull } from './connect4';
 import TurnBanner, { BANNER_MS, WIN_BANNER_MS } from './TurnBanner';
 import './App.css';
 import './Menu.css';
@@ -67,11 +67,33 @@ function Game({ mode, difficulty, humanColor, first, names, onExit, themeToggle 
   }, [gameOver]);
   const showOver = gameOver && overReady;
 
+  // The CPU thinks in a Web Worker so its search never freezes the animations.
+  const workerRef = useRef(null);
+  const requestRef = useRef(0);
+  useEffect(() => {
+    const worker = new Worker(new URL('./cpuWorker.js', import.meta.url), { type: 'module' });
+    workerRef.current = worker;
+    return () => worker.terminate();
+  }, []);
+
   useEffect(() => {
     if (!aiTurn) return;
-    // Let the turn banner play out before the CPU moves.
-    const id = setTimeout(() => play(bestMove(board, cpuColor, humanColor, DIFFICULTY[difficulty])), BANNER_MS);
-    return () => clearTimeout(id);
+    const worker = workerRef.current;
+    const id = ++requestRef.current;
+    const started = performance.now();
+    let timer;
+    const onMessage = (e) => {
+      if (e.data.id !== id) return; // reply to an older, cancelled request
+      // Start thinking right away, but let the turn banner finish before moving.
+      const wait = Math.max(0, BANNER_MS - (performance.now() - started));
+      timer = setTimeout(() => play(e.data.col), wait);
+    };
+    worker.addEventListener('message', onMessage);
+    worker.postMessage({ id, board, me: cpuColor, opp: humanColor, depth: DIFFICULTY[difficulty] });
+    return () => {
+      worker.removeEventListener('message', onMessage);
+      clearTimeout(timer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aiTurn, board]);
 
